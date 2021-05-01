@@ -9,8 +9,9 @@ import matplotlib.patches as mpatches
 import os
 from pickle import dump
 
-def rms_df(df,window):
-    window = 200
+def rms_df(df,window=200):
+    if type(df)!=pd.DataFrame:
+        df = pd.DataFrame(df)
     labels = df.columns
     for x in labels:
         rms_vals = [0]*window
@@ -19,7 +20,16 @@ def rms_df(df,window):
             rms = np.sqrt(np.mean(df[x][j-window:j]**2))
             rms_vals.append(rms)
         df[x] = np.array(rms_vals)
-    return df
+    return np.array(df)
+
+def rms(array,window=200):
+    rms_array = []
+    i = 0
+    while len(rms_array)<len(array)-window:
+        rms = np.sqrt(np.mean(array[i:i+window]**2))
+        rms_array.append(rms)
+        i=i+1
+    return np.array(rms_array)
 
 def difference(dataset, interval=1):
 	diff = []
@@ -44,7 +54,7 @@ def map_it(x,old_range,new_range):
         return q
 
 def min_max(df):
-    scaler = MinMaxScaler()
+    scaler = MinMaxScaler(feature_range=(-1,1))
     scaler.fit(df)
     df = scaler.transform(df)
     dump(scaler, open('min_max.pkl', 'wb'))
@@ -358,3 +368,14 @@ def list_vstacker(data_list):
     for x in data_list:
         main_X = np.vstack((main_X,x))
     return main_X
+
+def freaq_window(data,Fs=2000):
+    spec_list = []
+    for i in range(data.shape[1]):
+        y = data[:,i]
+        spec,freq,line = plt.magnitude_spectrum(y,Fs)
+        spec_list.append(spec)
+    X = np.array(spec_list[0])
+    for x in spec_list[1:]:
+        X = np.vstack((X,np.array(x)))
+    return np.transpose(X)
