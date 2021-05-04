@@ -7,6 +7,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
 import matplotlib.patches as mpatches
 import os
+from random import shuffle
 from pickle import dump
 
 def rms_df(df,window=200):
@@ -43,15 +44,9 @@ def map_it(x,old_range,new_range):
     C,D = new_range
     scale = (D-C)/(B-A)
     offset = -A*(D-C)/(B-A) + C
-    if type(x)==np.ndarray:
-        qs = []
-        for i in x:
-            q = i*scale + offset
-            qs.append(q)
-        return np.array(qs)
-    else:
-        q = x*scale + offset
-        return q
+    x = np.array(x)
+    new_x = x*scale + offset
+    return new_x
 
 def min_max(df):
     scaler = MinMaxScaler(feature_range=(-1,1))
@@ -60,12 +55,23 @@ def min_max(df):
     dump(scaler, open('min_max.pkl', 'wb'))
     return df
 
+def snr_scale(snr,arr):
+    x_watts = arr
+    target_snr_db = snr
+    # Calculate signal power and convert to dB 
+    sig_avg_watts = np.mean(x_watts)
+    sig_avg_db = 10 * np.log10(sig_avg_watts)
+    # Calculate noise according to [2] then convert to watts
+    noise_avg_db = sig_avg_db - target_snr_db
+    noise_avg_watts = 10 ** (noise_avg_db / 10)
+    return np.sqrt(noise_avg_watts)
+
 def add__Gausian_noise(array,theta):
     if type(array)==pd.DataFrame:
         df = array
         for x in array.columns:
             pure = np.array(df[x])
-            noise = np.random.normal(-theta, theta, pure.shape[0])
+            noise = np.random.normal(0, snr_scale(theta,pure), pure.shape[0])
             n_signal = pure.reshape(array.shape[0],1) + noise.reshape(array.shape[0],1)
             df[x] = n_signal
         return df
@@ -73,14 +79,14 @@ def add__Gausian_noise(array,theta):
     elif array.shape[1]>1:
         for x in range(array.shape[1]):
             pure = np.array(array[:,x])
-            noise = np.random.normal(-theta, theta, pure.shape[0])
+            noise = np.random.normal(0, snr_scale(theta,pure), pure.shape[0])
             n_signal = pure.reshape(array.shape[0]) + noise.reshape(array.shape[0])
             array[:,x] = n_signal
         return array
         
     else:
         pure = np.array(array)
-        noise = np.random.normal(-theta, theta, pure.shape[0])
+        noise = np.random.normal(0, snr_scale(theta,pure), pure.shape[0])
         x = np.linspace(0,100,pure.shape[0])
         return pure.reshape(data.shape[0],1) + noise.reshape(data.shape[0],1)
 
@@ -313,7 +319,7 @@ def prep_data_DTM(df,window,interval=0,Normalize=False,rms=False,angle_thresh = 
         plt.plot(all_angle_flexion)
         plt.plot(all_angle_radial)
         plt.title('DTM Angles')
-        plt.legend(['Pronation Angle','Radial Angle'],loc=2)
+        plt.legend(['Flexion Angle','Radial Angle'],loc=2)
         plt.xlabel('t [2000hz]')
         plt.ylabel('Angle (deg)')
         for x in segments:
@@ -379,3 +385,8 @@ def freaq_window(data,Fs=2000):
     for x in spec_list[1:]:
         X = np.vstack((X,np.array(x)))
     return np.transpose(X)
+
+def scrambled(orig):
+    dest = orig[:]
+    shuffle(dest)
+    return dest
