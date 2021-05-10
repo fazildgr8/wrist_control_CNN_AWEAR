@@ -232,8 +232,8 @@ def prep_data_prosup(df,window,interval=0,Normalize=False,rms=False,angle_thresh
         for x in segments:
             plt.axvspan(x[0],x[1],facecolor= x[2], alpha=a)
         clear_patch = mpatches.Patch(color='white', label='No Motion')
-        blue_patch = mpatches.Patch(color='blue', label='Negative Motion(-)')
-        red_patch = mpatches.Patch(color='red', label='Positive Motion(+)')
+        blue_patch = mpatches.Patch(color='blue', label='Pronation')
+        red_patch = mpatches.Patch(color='red', label='Supination')
         plt.legend(handles=[clear_patch,red_patch,blue_patch],loc=2)
         plt.show()
         
@@ -310,8 +310,8 @@ def prep_data_DTM(df,window,interval=0,Normalize=False,rms=False,angle_thresh = 
         for x in segments:
             plt.axvspan(x[0],x[1],facecolor= x[2], alpha=a)
         clear_patch = mpatches.Patch(color='white', label='No Motion')
-        blue_patch = mpatches.Patch(color='blue', label='Negative Motion(-)')
-        red_patch = mpatches.Patch(color='red', label='Positive Motion(+)')
+        blue_patch = mpatches.Patch(color='blue', label='DTM Backward')
+        red_patch = mpatches.Patch(color='red', label='DTM Forward')
         plt.legend(handles=[clear_patch,red_patch,blue_patch],loc=2)
         plt.show()
         
