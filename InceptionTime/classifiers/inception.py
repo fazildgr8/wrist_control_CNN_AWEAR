@@ -65,7 +65,7 @@ class Classifier_INCEPTION:
     def _shortcut_layer(self, input_tensor, out_tensor):
         shortcut_y = keras.layers.Conv1D(filters=int(out_tensor.shape[-1]), kernel_size=1,
                                          padding='same', use_bias=False)(input_tensor)
-        shortcut_y = keras.layers.normalization.BatchNormalization()(shortcut_y)
+        shortcut_y = keras.layers.BatchNormalization()(shortcut_y)
 
         x = keras.layers.Add()([shortcut_y, out_tensor])
         x = keras.layers.Activation('relu')(x)
