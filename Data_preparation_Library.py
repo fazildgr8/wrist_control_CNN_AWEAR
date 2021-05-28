@@ -9,6 +9,7 @@ import matplotlib.patches as mpatches
 import os
 from random import shuffle
 from pickle import dump
+from scipy import signal
 
 def rms_df(df,window=200):
     if type(df)!=pd.DataFrame:
@@ -390,3 +391,67 @@ def scrambled(orig):
     dest = orig[:]
     shuffle(dest)
     return dest
+
+def prep_data_velocity(df,window,angle_label,interval=0,Normalize=False,rms=False):
+    
+    emg_labels = ['EMG1', 'EMG2', 'EMG3', 'EMG4', 'EMG5', 'EMG6','EMG7', 'EMG8'] # , 'EMG9', 'EMG10', 'EMG11', 'EMG12'
+    emg_df = df[emg_labels]
+    
+
+    if(Normalize==True):
+        emg_df = pd.DataFrame(norm(emg_df),columns=emg_labels)
+        
+    if(rms==True):
+        emg_df = rms_df(emg_df,window)
+        
+    emg_array = np.array(emg_df)
+    all_angle = np.array(df[angle_label])
+    
+    velocity = np.diff([0]+list(all_angle))
+    b,a = signal.butter(1, 1,fs=2000)
+    velocity = signal.lfilter(b, a,velocity)
+    
+    X = []
+    y = []
+    i = 0
+    while i < df.shape[0]-window:
+        rmin = i
+        rmax = i+window
+        
+        loc_arr = emg_array[rmin:rmax]
+        X.append(loc_arr)
+        angles = all_angle[rmin:rmax]
+        diff = difference(angles).mean()
+        y.append(velocity[i])
+        i = i + interval
+            
+    X = np.array(X)
+    y = np.array(y)
+    return X, y
+
+def multiple_prep_data_velocity(df_list,window,angle_label,interval=0,Normalize=False,rms=False):
+    X_all, y_all = [], []
+    for df in tqdm(df_list):
+        X, y = prep_data_velocity(df,window,angle_label,interval,Normalize,rms)
+        X_all.append(X)
+        y_all = y_all + list(y)
+        
+    X_all_stack = list_vstacker(X_all)
+    y_all_stack = list_vstacker(y_all)
+
+    return X_all_stack, y_all_stack    
+
+def variance(data, ddof=0):
+    n = len(data)
+    mean = sum(data) / n
+    return sum((x - mean) ** 2 for x in data) / (n - ddof)
+
+def filter_df(files_df,order=1,cf=50,fs=2000):
+    emg_labels = ['EMG1','EMG2','EMG3','EMG4','EMG5','EMG6','EMG7','EMG8']
+    b,a = signal.butter(1, cf,fs=fs)
+    for i in range(len(files_df)):
+        emg_df = pd.DataFrame(columns=emg_labels)
+        for labels in emg_labels:
+            emg_df[labels] = signal.lfilter(b, a,files_df[i][labels])
+        files_df[i][emg_labels] = np.array(emg_df)
+    return files_df
