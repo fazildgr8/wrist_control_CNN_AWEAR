@@ -406,8 +406,9 @@ def prep_data_velocity(df,window,angle_label,interval=0,Normalize=False,rms=Fals
         
     emg_array = np.array(emg_df)
     all_angle = np.array(df[angle_label])
-    
-    velocity = np.diff([0]+list(all_angle))
+
+
+    velocity = np.diff(list(all_angle)+[0])
     b,a = signal.butter(1, 1,fs=2000)
     velocity = signal.lfilter(b, a,velocity)
     
@@ -422,11 +423,12 @@ def prep_data_velocity(df,window,angle_label,interval=0,Normalize=False,rms=Fals
         X.append(loc_arr)
         angles = all_angle[rmin:rmax]
         diff = difference(angles).mean()
-        y.append(velocity[i])
+        y.append(velocity[rmax])
         i = i + interval
-            
+    scaler = StandardScaler()       
     X = np.array(X)
     y = np.array(y)
+    y = scaler.fit_transform(y.reshape(y.shape[0],1))
     return X, y
 
 def multiple_prep_data_velocity(df_list,window,angle_label,interval=0,Normalize=False,rms=False):
