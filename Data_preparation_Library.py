@@ -425,6 +425,7 @@ def prep_data_velocity(df,window,angle_label,interval=0,Normalize=False,rms=Fals
         diff = difference(angles).mean()
         y.append(velocity[rmax])
         i = i + interval
+    # scaler = MinMaxScaler(feature_range=(-1,1))  
     scaler = StandardScaler()       
     X = np.array(X)
     y = np.array(y)
