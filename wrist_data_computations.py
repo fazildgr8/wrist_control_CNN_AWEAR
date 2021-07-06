@@ -1,27 +1,17 @@
-#!/usr/bin/env python
-# coding: utf-8
-
-# # Wrist Movement Data Formating
-
-# In[20]:
-
-
 import numpy as np
 import pandas as pd
 from math import sqrt,acos,degrees
 import matplotlib.pyplot as plt
 from scipy.signal import resample
 from tqdm.notebook import tqdm
+from time import time
 import os
 import csv
 
-
-# ## EMG Data Extraction (Cumilative Function)
-
-# In[22]:
-
-
-def extract_dataframe(path,file,save=False):
+def extract_dataframes(path,file,save=False):
+    file_s = file
+    file = '/marker_data/' + file
+    
     with open(path+'/'+file, "r") as f:
         lines = f.readlines()
     emg_labels = ['Frame','Sub Frame',
@@ -64,6 +54,7 @@ def extract_dataframe(path,file,save=False):
     pronation_movement = ['No Motion','Supination','Pronation']
     flexion_movement = ['No Motion','Extension','Flexion']
     radial_movement = ['No Motion','Ulnar','Radial']
+    dtm_movement = ['No Motion','Forward','Backward']
     
     #################
     # EMG Data Frame#
@@ -108,9 +99,25 @@ def extract_dataframe(path,file,save=False):
     radials = resample_series(radials,100,2000)
     elbows = resample_series(elbows,100,2000)    
     
-    pronation_labels,pronation_movement_labels = direction_labels(pronations,500,pronation_movement)
-    flexion_labels,flexion_movement_labels = direction_labels(flexions,500,flexion_movement)
-    radial_labels,radial_movement_labels = direction_labels(radials,500,radial_movement)
+    diff_interval = 1000
+    
+    pronation_labels,pronation_movement_labels = direction_labels(pronations,diff_interval,pronation_movement)
+    flexion_labels,flexion_movement_labels = direction_labels(flexions,diff_interval,flexion_movement)
+    radial_labels,radial_movement_labels = direction_labels(radials,diff_interval,radial_movement)
+    
+    # Dart Throwing Motion Labeling
+    dtm_labels = []
+    ln = len(flexion_labels)
+    
+    for i in range(ln):
+        if(flexion_labels[i]==0 and radial_labels[i]==0):
+            dtm_labels.append(0)
+        elif(flexion_labels[i]==2 and radial_labels[i]==1):
+            dtm_labels.append(1)
+        elif(flexion_labels[i]==1 and radial_labels[i]==2):
+            dtm_labels.append(2)
+        else:
+            dtm_labels.append(0)
     
     emg_df['Pronation_Angle'] = pronations
     emg_df['Pronation_Label'] = pronation_labels
@@ -123,11 +130,12 @@ def extract_dataframe(path,file,save=False):
     
     emg_df['Elbow_Joint_Angle'] = elbows
     
+    emg_df['DTM_Label'] = dtm_labels
     
     if(save==True):
-        emg_df.to_csv(path+'/computed_'+file)
+        emg_df.to_csv(path+'/computed_'+file_s)
         
-    return emg_df
+    return emg_df,marker_df, angles_df
 
 def resample_series(data,sr_origin,sr_new):
     """
@@ -137,31 +145,11 @@ def resample_series(data,sr_origin,sr_new):
     sr_new - New Sampling Rate
     Return - Resampled Data to Given Sample Rate
     """
-    dt = pd.Series(data)
-    dt.index = pd.to_datetime(dt.index*(int((sr_origin/10)**7)))
-    dt2 = dt.resample(str(1/sr_new)+'S').ffill()
-    len_diff = len(dt)*(sr_new/sr_origin) - len(dt2)
-    dt2_list = list(np.array(dt2))
-    resampled_array = None
-    
-    # Balencing
-    if(len_diff%2==0):
-        nd = int(len_diff/2)
-        resampled_array = [dt2_list[0]]*nd + dt2_list
-        resampled_array = resampled_array + [dt2_list[-1]]*nd
-    else:
-        nd = int((len_diff+1)/2)
-        resampled_array = [dt2_list[0]]*nd + dt2_list
-        resampled_array = resampled_array + [dt2_list[-1]]*nd
-        resampled_array = resampled_array[1:]
-        
+    data = np.array(data)
+    ln = data.shape[0]
+    new_ln = int(ln*(sr_new/sr_origin))
+    resampled_array = resample(data,new_ln)    
     return np.array(resampled_array)
-
-
-# ## Compute Wrist Angles
-
-# In[10]:
-
 
 def compute_wrist_angles(df,degree=False):
     # Wrist Segment
@@ -214,40 +202,25 @@ def angles_lines(p1,p2,mid,deg=False):
             angles.append(degrees(acos(cos_t)))
     return np.array(angles)
 
-
-# ## Movement Labelling
-
-# In[11]:
-
-
 def direction_labels(array,interval=50,movements=None):
     """
     0 - No Motion
     1 - Positive Direction
     2 - Negative Direction
     """
-    labels = []
-    diff_arr = difference(array,interval)
-    data_len = len(array)
-    len_diff = int(data_len - len(diff_arr))
-    for diff in diff_arr:
-        if(abs(diff)<5):
+    labels = [0]*interval
+    i=interval
+    std = np.array(array).std()
+    while(len(labels)<len(array)):
+        diff = difference(array[i-interval:i]).mean()
+        if(abs(diff)<std/1000):
             labels.append(0)
         elif(diff>0):
             labels.append(1)
         elif(diff<0):
             labels.append(2)
-    # Balencing
-    if(len_diff%2==0):
-        nd = int(len_diff/2)
-        labels = [labels[0]]*nd + labels
-        labels = labels + [labels[-1]]*nd
-    else:
-        nd = int((len_diff+1)/2)
-        labels = [labels[0]]*nd + labels
-        labels = labels + [labels[-1]]*nd 
-        labels = labels[1:]
-        
+        i=i+1
+    # Movement Labelling
     if(movements==None):
         return np.array(labels)
     else:
@@ -256,12 +229,10 @@ def direction_labels(array,interval=50,movements=None):
         for lb in labels:
             movement_labels.append(movements[lb])
         return hot_labels,movement_labels
-    
+
 def difference(dataset, interval=1):
-	diff = list()
+	diff = []
 	for i in range(interval, len(dataset)):
 		value = dataset[i] - dataset[i - interval]
 		diff.append(value)
-	return diff
-
-
+	return np.array(diff)

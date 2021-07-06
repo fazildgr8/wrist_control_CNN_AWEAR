@@ -409,6 +409,7 @@ def prep_data_velocity(df,window,angle_label,interval=0,Normalize=False,rms=Fals
 
 
     velocity = np.diff(list(all_angle)+[0])
+    velocity = velocity/(1/2000)
     b,a = signal.butter(1, 1,fs=2000)
     velocity = signal.lfilter(b, a,velocity)
     
@@ -429,7 +430,7 @@ def prep_data_velocity(df,window,angle_label,interval=0,Normalize=False,rms=Fals
     scaler = StandardScaler()       
     X = np.array(X)
     y = np.array(y)
-    y = scaler.fit_transform(y.reshape(y.shape[0],1))
+    # y = scaler.fit_transform(y.reshape(y.shape[0],1))
     return X, y
 
 def multiple_prep_data_velocity(df_list,window,angle_label,interval=0,Normalize=False,rms=False):
@@ -458,3 +459,18 @@ def filter_df(files_df,order=1,cf=50,fs=2000):
             emg_df[labels] = signal.lfilter(b, a,files_df[i][labels])
         files_df[i][emg_labels] = np.array(emg_df)
     return files_df
+
+def emg_normalize(df,mean_list):
+    cols = df.columns
+    for i in range(len(mean_list)):
+        df[cols[i]] = df[cols[i]] - mean_list[i]
+    return df
+
+
+
+        
+
+
+
+
+
