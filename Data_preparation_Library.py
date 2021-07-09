@@ -12,6 +12,7 @@ from pickle import dump
 from scipy import signal
 
 def rms_df(df,window=200):
+    window = 20
     if type(df)!=pd.DataFrame:
         df = pd.DataFrame(df)
     labels = df.columns
