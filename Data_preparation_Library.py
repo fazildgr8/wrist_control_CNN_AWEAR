@@ -467,7 +467,9 @@ def emg_normalize(df,mean_list):
         df[cols[i]] = df[cols[i]] - mean_list[i]
     return df
 
-
+def system_shutdown(t = 30):
+    txt = 'shutdown /s /f /t '+str(t)
+    os.system(txt)
 
         
 
