@@ -8,7 +8,7 @@ from sklearn.preprocessing import StandardScaler, MinMaxScaler
 import matplotlib.patches as mpatches
 import os
 from random import shuffle
-from pickle import dump
+from pickle import dump, load
 from scipy import signal
 
 def rms_df(df,window=200):
@@ -96,11 +96,13 @@ def norm(df):
     if len(df.shape)==1:
         df = np.array(df)
         df  = df.reshape(-1,1)
-    scaler = StandardScaler(with_mean=True,
-                            with_std=True,
-                            copy=False).fit(df)
+    # scaler = StandardScaler(with_mean=True,
+    #                         with_std=True,
+    #                         copy=False).fit(df)
+    # df = scaler.transform(df)
+    # dump(scaler, open('standard_scaler.pkl', 'wb'))
+    scaler = load(open('standard_scaler_master.pkl', 'rb'))
     df = scaler.transform(df)
-    dump(scaler, open('standard_scaler.pkl', 'wb'))
     return df
 
 def prep_data(df,window,angle_label,interval=0,Normalize=False,rms=False,angle_thresh = 0.001,plot=False):
