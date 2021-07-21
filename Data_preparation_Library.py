@@ -415,6 +415,10 @@ def prep_data_velocity(df,window,angle_label,interval=0,Normalize=False,rms=Fals
     velocity = velocity/(1/2000)
     b,a = signal.butter(1, 1,fs=2000)
     velocity = signal.lfilter(b, a,velocity)
+    velocity = filter_array(velocity,order=1,cf=50,fs=2000)
+    # velocity = filter_array(velocity,order=1,cf=50,fs=2000)
+    # velocity = filter_array(velocity,order=1,cf=50,fs=2000)
+    
     
     X = []
     y = []
@@ -455,7 +459,7 @@ def variance(data, ddof=0):
 
 def filter_df(files_df,order=1,cf=50,fs=2000):
     emg_labels = ['EMG1','EMG2','EMG3','EMG4','EMG5','EMG6','EMG7','EMG8']
-    b,a = signal.butter(1, cf,fs=fs)
+    b,a = signal.butter(order, cf,fs=fs)
     for i in range(len(files_df)):
         emg_df = pd.DataFrame(columns=emg_labels)
         for labels in emg_labels:
@@ -473,9 +477,11 @@ def system_shutdown(t = 30):
     txt = 'shutdown /s /f /t '+str(t)
     os.system(txt)
 
-        
-
-
-
+def filter_array(arr,cf=50,order=1,fs=100):
+    if len(arr.reshape((-1)).shape) < 2:
+        arr = arr.reshape((-1))
+    b,a = signal.butter(order, cf,fs=fs)
+    arr = signal.lfilter(b, a,arr)
+    return arr
 
 
