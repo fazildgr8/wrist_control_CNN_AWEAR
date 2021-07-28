@@ -4,8 +4,10 @@ import matplotlib.pyplot as plt
 from tqdm.notebook import tqdm
 from time import time
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler, MinMaxScaler
+from sklearn.preprocessing import StandardScaler, MinMaxScaler, QuantileTransformer
 import matplotlib.patches as mpatches
+import Geometry3D as G3D
+from math import sin, cos, radians
 import os
 from random import shuffle
 from pickle import dump, load
@@ -411,11 +413,11 @@ def prep_data_velocity(df,window,angle_label,interval=0,Normalize=False,rms=Fals
     all_angle = np.array(df[angle_label])
 
 
-    velocity = np.diff(list(all_angle)+[0])
+    velocity = np.diff(list(all_angle)+[all_angle[-1]])
     velocity = velocity/(1/2000)
-    b,a = signal.butter(1, 1,fs=2000)
+    b,a = signal.butter(3, 1,fs=2000)
     velocity = signal.lfilter(b, a,velocity)
-    velocity = filter_array(velocity,order=1,cf=50,fs=2000)
+    # velocity = filter_array(velocity,order=1,cf=50,fs=2000)
     # velocity = filter_array(velocity,order=1,cf=50,fs=2000)
     # velocity = filter_array(velocity,order=1,cf=50,fs=2000)
     
@@ -483,5 +485,3 @@ def filter_array(arr,cf=50,order=1,fs=100):
     b,a = signal.butter(order, cf,fs=fs)
     arr = signal.lfilter(b, a,arr)
     return arr
-
-
