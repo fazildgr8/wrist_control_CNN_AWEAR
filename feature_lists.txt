@@ -1,0 +1,70 @@
+Ingy
+****
+Data columns (total 24 columns):
+ #   Column                                         Non-Null Count  Dtype  
+---  ------                                         --------------  -----  
+ 0   EMG1__abs_energy                               4000 non-null   float64
+ 1   EMG1__root_mean_square                         4000 non-null   float64
+ 2   EMG1__fft_coefficient__attr_"abs"__coeff_0     4000 non-null   float64
+ 3   EMG8__root_mean_square                         4000 non-null   float64
+ 4   EMG8__abs_energy                               4000 non-null   float64
+ 5   EMG8__fft_coefficient__attr_"abs"__coeff_0     4000 non-null   float64
+ 6   EMG7__fft_coefficient__attr_"abs"__coeff_0     4000 non-null   float64
+ 7   EMG7__root_mean_square                         4000 non-null   float64
+ 8   EMG7__abs_energy                               4000 non-null   float64
+ 9   EMG6__benford_correlation                      4000 non-null   float64
+ 10  EMG7__benford_correlation                      4000 non-null   float64
+ 11  EMG6__count_below__t_0                         4000 non-null   float64
+ 12  EMG6__count_above__t_0                         4000 non-null   float64
+ 13  EMG6__range_count__max_1000000000000.0__min_0  4000 non-null   float64
+ 14  EMG6__fft_coefficient__attr_"angle"__coeff_0   4000 non-null   float64
+ 15  EMG7__count_below__t_0                         4000 non-null   float64
+ 16  EMG7__count_above__t_0                         4000 non-null   float64
+ 17  EMG7__range_count__max_1000000000000.0__min_0  4000 non-null   float64
+ 18  EMG7__fft_coefficient__attr_"angle"__coeff_0   4000 non-null   float64
+ 19  EMG5__range_count__max_1000000000000.0__min_0  4000 non-null   float64
+ 20  EMG5__count_below__t_0                         4000 non-null   float64
+ 21  EMG5__fft_coefficient__attr_"angle"__coeff_0   4000 non-null   float64
+ 22  EMG5__count_above__t_0                         4000 non-null   float64
+ 23  EMG1__benford_correlation                      4000 non-null   float64
+
+Nikhil
+******
+Data columns (total 16 columns):
+ #   Column                                         Non-Null Count  Dtype  
+---  ------                                         --------------  -----  
+ 0   EMG1__fft_coefficient__attr_"abs"__coeff_0     4000 non-null   float64
+ 1   EMG1__abs_energy                               4000 non-null   float64
+ 2   EMG1__root_mean_square                         4000 non-null   float64
+ 3   EMG6__benford_correlation                      4000 non-null   float64
+ 4   EMG6__fft_coefficient__attr_"angle"__coeff_0   4000 non-null   float64
+ 5   EMG6__range_count__max_1000000000000.0__min_0  4000 non-null   float64
+ 6   EMG6__count_above__t_0                         4000 non-null   float64
+ 7   EMG6__count_below__t_0                         4000 non-null   float64
+ 8   EMG7__abs_energy                               4000 non-null   float64
+ 9   EMG7__root_mean_square                         4000 non-null   float64
+ 10  EMG7__fft_coefficient__attr_"abs"__coeff_0     4000 non-null   float64
+ 11  EMG2__count_below__t_0                         4000 non-null   float64
+ 12  EMG2__fft_coefficient__attr_"angle"__coeff_0   4000 non-null   float64
+ 13  EMG2__range_count__max_1000000000000.0__min_0  4000 non-null   float64
+ 14  EMG2__count_above__t_0                         4000 non-null   float64
+ 15  EMG7__benford_correlation                      4000 non-null   float64
+
+Abhishek
+********
+
+Nirmayee
+********
+
+Deepti
+******
+
+Fazil
+*****
+
+Jai
+***
+
+Varun
+******
+

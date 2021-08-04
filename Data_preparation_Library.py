@@ -13,28 +13,21 @@ from random import shuffle
 from pickle import dump, load
 from scipy import signal
 
-def rms_df(df,window=200):
-    window = 20
-    if type(df)!=pd.DataFrame:
-        df = pd.DataFrame(df)
-    labels = df.columns
-    for x in labels:
-        rms_vals = [0]*window
-        for i in range(len(df[x])-window):
-            j = i + window
-            rms = np.sqrt(np.mean(df[x][j-window:j]**2))
-            rms_vals.append(rms)
-        df[x] = np.array(rms_vals)
-    return np.array(df)
+def rms_df(df,window=20):
+    ldif = window-1
+    emg_df = pd.DataFrame(columns=df.columns)
+    for column in df.columns:
+        rms_arr = window_rms(df[column],window)
+        fill_arr = np.ones(ldif)
+        emg_df[column] = np.array(list(window_rms(df[column],window)) + list(fill_arr))
+    # print(emg_df.shape)
+    return emg_df
+        
+def window_rms(a, window_size):
+    a2 = np.power(a,2)
+    window = np.ones(window_size)/float(window_size)
+    return np.sqrt(np.convolve(a2, window, 'valid'))
 
-def rms(array,window=200):
-    rms_array = []
-    i = 0
-    while len(rms_array)<len(array)-window:
-        rms = np.sqrt(np.mean(array[i:i+window]**2))
-        rms_array.append(rms)
-        i=i+1
-    return np.array(rms_array)
 
 def difference(dataset, interval=1):
 	diff = []
@@ -102,8 +95,8 @@ def norm(df):
     #                         with_std=True,
     #                         copy=False).fit(df)
     # df = scaler.transform(df)
-    # dump(scaler, open('standard_scaler.pkl', 'wb'))
-    scaler = load(open('standard_scaler_master.pkl', 'rb'))
+    # dump(scaler, open('standard_scaler_features.pkl', 'wb'))
+    scaler = load(open('standard_scaler_features.pkl', 'rb')) #'standard_scaler_master.pkl'
     df = scaler.transform(df)
     return df
 
@@ -158,7 +151,7 @@ def prep_data(df,window,angle_label,interval=0,Normalize=False,rms=False,angle_t
     ## Plot Codes
     if plot==True:
         fig_size = (18,8)
-        emg_df = pd.DataFrame(norm(emg_df),columns=emg_labels)
+        emg_df = pd.DataFrame(np.array(emg_df),columns=emg_labels)
         emg_df.plot(figsize=fig_size,title='EMG',legend=True)
         a = map_it(interval,(0,1000),(0,1))
         for x in segments:
@@ -232,7 +225,7 @@ def prep_data_prosup(df,window,interval=0,Normalize=False,rms=False,angle_thresh
     ## Plot Codes
     if plot==True:
         fig_size = (18,8)
-        emg_df = pd.DataFrame(norm(emg_df),columns=emg_labels)
+        emg_df = pd.DataFrame(np.array(emg_df),columns=emg_labels)
         emg_df.plot(figsize=fig_size,title='EMG',legend=True)
         a = map_it(interval,(0,1000),(0,1))
         for x in segments:
@@ -397,21 +390,22 @@ def scrambled(orig):
     shuffle(dest)
     return dest
 
-def prep_data_velocity(df,window,angle_label,interval=0,Normalize=False,rms=False):
+def prep_data_velocity(df,window,angle_label,interval=0,Normalize=False,rms=False,rms_window=20):
     
+
     emg_labels = ['EMG1', 'EMG2', 'EMG3', 'EMG4', 'EMG5', 'EMG6','EMG7', 'EMG8'] # , 'EMG9', 'EMG10', 'EMG11', 'EMG12'
-    emg_df = df[emg_labels]
-    
+    emg_df = df[emg_labels] 
 
     if(Normalize==True):
         emg_df = pd.DataFrame(norm(emg_df),columns=emg_labels)
         
     if(rms==True):
-        emg_df = rms_df(emg_df,window)
+        emg_df = rms_df(emg_df,rms_window)
         
     emg_array = np.array(emg_df)
     all_angle = np.array(df[angle_label])
 
+    all_angle = pd.Series(all_angle).interpolate().values
 
     velocity = np.diff(list(all_angle)+[all_angle[-1]])
     velocity = velocity/(1/2000)
@@ -440,6 +434,8 @@ def prep_data_velocity(df,window,angle_label,interval=0,Normalize=False,rms=Fals
     X = np.array(X)
     y = np.array(y)
     # y = scaler.fit_transform(y.reshape(y.shape[0],1))
+    y = pd.Series(y.reshape((len(y)))).interpolate()
+    y = y.values.reshape((len(y),1))
     return X, y
 
 def multiple_prep_data_velocity(df_list,window,angle_label,interval=0,Normalize=False,rms=False):
@@ -485,3 +481,21 @@ def filter_array(arr,cf=50,order=1,fs=100):
     b,a = signal.butter(order, cf,fs=fs)
     arr = signal.lfilter(b, a,arr)
     return arr
+
+def preprocessor_arr(emg_arr):
+    fs = 2000
+    n = 4
+    Fa = 80
+    Fb = 800
+    cf = np.array([Fa,Fb])
+    emg_arr_1 = filter_array(emg_arr,cf=cf,order=n,fs=fs,btype='bandpass')
+    emg_arr_2 = abs(emg_arr_1)
+    emg_arr_3 = filter_array(emg_arr_2,cf=6,order=4,fs=fs,btype='lowpass')
+    return emg_arr_3
+
+def preprocessor_df(df):
+    emg_labels = ['EMG1','EMG2','EMG3','EMG4','EMG5','EMG6','EMG7','EMG8', 'EMG9', 'EMG10', 'EMG11', 'EMG12']
+    fdf = df.copy()
+    for lbs in emg_labels:
+        fdf[lbs] = preprocessor_arr(df[lbs].values)
+    return fdf
