@@ -95,8 +95,8 @@ def norm(df):
     #                         with_std=True,
     #                         copy=False).fit(df)
     # df = scaler.transform(df)
-    # dump(scaler, open('standard_scaler_features.pkl', 'wb'))
-    scaler = load(open('standard_scaler_features.pkl', 'rb')) #'standard_scaler_master.pkl'
+    # dump(scaler, open('standard_scaler_classify.pkl', 'wb'))
+    scaler = load(open('standard_scaler_master.pkl', 'rb')) #'standard_scaler_master.pkl'
     df = scaler.transform(df)
     return df
 
@@ -174,21 +174,35 @@ def prep_data(df,window,angle_label,interval=0,Normalize=False,rms=False,angle_t
     return X, y
 
 def prep_data_prosup(df,window,interval=0,Normalize=False,rms=False,angle_thresh = 0.001,plot=False):
-
     angle_label = 'Pronation_Angle'
-    emg_labels = ['EMG1', 'EMG2', 'EMG3', 'EMG4', 'EMG5', 'EMG6',
-           'EMG7', 'EMG8'] # , 'EMG9', 'EMG10', 'EMG11', 'EMG12'
+    emg_labels = ['EMG1', 'EMG2', 'EMG3', 'EMG4', 'EMG5', 'EMG6','EMG7', 'EMG8']
     emg_df = df[emg_labels]
     emg_df = pd.DataFrame(np.array(emg_df),columns=emg_labels)
 
     if(Normalize==True):
         emg_df = pd.DataFrame(norm(emg_df),columns=emg_labels)
-        
+
     if(rms==True):
         emg_df = rms_df(emg_df,window)
-        
+
+
+    angle_div = int(len(emg_df)/1000)
     emg_array = np.array(emg_df)
     all_angle = np.array(df[angle_label])
+
+    split_angles = np.array_split(all_angle,angle_div)
+
+    labels = []
+    for arr in split_angles:
+        diff_arr = np.diff(arr)
+        if abs(diff_arr.mean()) > angle_thresh:
+            if diff_arr.mean()>0:
+                labels = labels + [1]*arr.shape[0]
+            else:
+                labels = labels + [2]*arr.shape[0]
+        else:
+            labels = labels + [0]*arr.shape[0]
+
     segments = []
     X = []
     y = []
@@ -197,18 +211,16 @@ def prep_data_prosup(df,window,interval=0,Normalize=False,rms=False,angle_thresh
     while i < df.shape[0]-window:
         rmin = i
         rmax = i+window
-        
+
         loc_arr = emg_array[rmin:rmax]
         X.append(loc_arr)
-        angles = all_angle[rmin:rmax]
-        
-        diff = difference(angles).mean()
-        
-        if(abs(diff)<angle_thresh):
+        max_label = np.bincount(np.array(labels[rmin:rmax])).argmax()
+
+        if(max_label==0):
             y.append([1,0,0])
             segments.append([rmin,rmax,'1'])
             counter[0]=counter[0]+1
-        elif(diff>0):
+        elif(max_label==1):
             y.append([0,1,0])
             segments.append([rmin,rmax,'r'])
             counter[1]=counter[1]+1
@@ -217,13 +229,12 @@ def prep_data_prosup(df,window,interval=0,Normalize=False,rms=False,angle_thresh
             segments.append([rmin,rmax,'b'])
             counter[2]=counter[2]+1
         i = i + interval
-            
+
     X = np.array(X)
     y = np.array(y)
 
-    
     ## Plot Codes
-    if plot==True:
+    if plot == True:
         fig_size = (18,8)
         emg_df = pd.DataFrame(np.array(emg_df),columns=emg_labels)
         emg_df.plot(figsize=fig_size,title='EMG',legend=True)
@@ -235,7 +246,7 @@ def prep_data_prosup(df,window,interval=0,Normalize=False,rms=False,angle_thresh
         red_patch = mpatches.Patch(color='red', label='Supination')
         plt.legend(handles=[clear_patch,red_patch,blue_patch],loc=2)
         plt.show()
-        
+
         plt.figure(figsize=fig_size)
         plt.plot(all_angle)
         plt.title(angle_label)
