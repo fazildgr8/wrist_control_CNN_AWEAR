@@ -186,7 +186,7 @@ def prep_data_prosup(df,window,interval=0,Normalize=False,rms=False,angle_thresh
         emg_df = rms_df(emg_df,window)
 
 
-    angle_div = int(len(emg_df)/1000)
+    angle_div = int(len(emg_df)/500)
     emg_array = np.array(emg_df)
     all_angle = np.array(df[angle_label])
 
@@ -230,6 +230,94 @@ def prep_data_prosup(df,window,interval=0,Normalize=False,rms=False,angle_thresh
             counter[2]=counter[2]+1
         i = i + interval
 
+    X = np.array(X)
+    y = np.array(y)
+
+    ## Plot Codes
+    if plot == True:
+        fig_size = (18,8)
+        emg_df = pd.DataFrame(np.array(emg_df),columns=emg_labels)
+        emg_df.plot(figsize=fig_size,title='EMG',legend=True)
+        a = map_it(interval,(0,1000),(0,1))
+        for x in segments:
+            plt.axvspan(x[0],x[1],facecolor= x[2], alpha=a)
+        clear_patch = mpatches.Patch(color='white', label='No Motion')
+        blue_patch = mpatches.Patch(color='blue', label='Pronation')
+        red_patch = mpatches.Patch(color='red', label='Supination')
+        plt.legend(handles=[clear_patch,red_patch,blue_patch],loc=2)
+        plt.show()
+
+        plt.figure(figsize=fig_size)
+        plt.plot(all_angle)
+        plt.title(angle_label)
+        plt.xlabel('t [2000hz]')
+        plt.ylabel('Angle (deg)')
+        plt.legend([angle_label],loc=2)
+        for x in segments:
+            plt.axvspan(x[0],x[1],facecolor= x[2], alpha=a)
+        plt.show()
+        for i in range(3):
+            print(i,'->',counter[i]*100/X.shape[0],'%')
+    return X, y
+
+def prep_data_prosup_bin(df,window,interval=0,Normalize=False,rms=False,angle_thresh = 0.001,plot=False):
+    angle_label = 'Pronation_Angle'
+    emg_labels = ['EMG1', 'EMG2', 'EMG3', 'EMG4', 'EMG5', 'EMG6','EMG7', 'EMG8']
+    emg_df = df[emg_labels]
+    emg_df = pd.DataFrame(np.array(emg_df),columns=emg_labels)
+
+    if(Normalize==True):
+        emg_df = pd.DataFrame(norm(emg_df),columns=emg_labels)
+
+    if(rms==True):
+        emg_df = rms_df(emg_df,window)
+
+
+    angle_div = int(len(emg_df)/500)
+    emg_array = np.array(emg_df)
+    all_angle = np.array(df[angle_label])
+
+    split_angles = np.array_split(all_angle,angle_div)
+
+    labels = []
+    for arr in split_angles:
+        diff_arr = np.diff(arr)
+        if abs(diff_arr.mean()) > angle_thresh:
+            if diff_arr.mean()>0:
+                labels = labels + [1]*arr.shape[0]
+            else:
+                labels = labels + [2]*arr.shape[0]
+        else:
+            labels = labels + [0]*arr.shape[0]
+
+    segments = []
+    X = []
+    y = []
+    i = 0
+    counter = [0,0,0]
+    while i < df.shape[0]-window:
+        rmin = i
+        rmax = i+window
+
+        loc_arr = emg_array[rmin:rmax]
+        # X.append(loc_arr)
+        max_label = np.bincount(np.array(labels[rmin:rmax])).argmax()
+
+        if(max_label==0):
+            # y.append([1,0,0])
+            segments.append([rmin,rmax,'1'])
+            counter[0]=counter[0]+1
+        elif(max_label==1):
+            X.append(loc_arr)
+            y.append([1,0])
+            segments.append([rmin,rmax,'r'])
+            counter[1]=counter[1]+1
+        else:
+            X.append(loc_arr)
+            y.append([0,1])
+            segments.append([rmin,rmax,'b'])
+            counter[2]=counter[2]+1
+        i = i + interval
     X = np.array(X)
     y = np.array(y)
 
@@ -375,6 +463,18 @@ def multiple_prep_data_prosup(df_list,window,interval,Normalize=False,rms=False,
     
     return X_all_stack, y_all_stack
 
+def multiple_prep_data_prosup_bin(df_list,window,interval,Normalize=False,rms=False,angle_thresh=0.001):
+    X_all, y_all = [], []
+    for df in tqdm(df_list):
+        X, y = prep_data_prosup_bin(df,window,interval,Normalize,rms,angle_thresh)
+        X_all.append(X)
+        y_all.append(y)
+        
+    X_all_stack = list_vstacker(X_all)
+    y_all_stack = list_vstacker(y_all)
+    
+    return X_all_stack, y_all_stack
+    
 def system_sleep():
     os.system("rundll32.exe powrprof.dll,SetSuspendState 0,1,0")
 
