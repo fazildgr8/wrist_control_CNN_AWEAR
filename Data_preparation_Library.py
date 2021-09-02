@@ -94,10 +94,16 @@ def norm(df):
     # scaler = StandardScaler(with_mean=True,
     #                         with_std=True,
     #                         copy=False).fit(df)
-    # df = scaler.transform(df)
-    # dump(scaler, open('standard_scaler_classify.pkl', 'wb'))
-    scaler = load(open('standard_scaler_master.pkl', 'rb')) #'standard_scaler_master.pkl'
+    # dump(scaler, open('standard_scaler_filtered_master.pkl', 'wb'))
+    scaler = load(open('standard_scaler_master.pkl', 'rb')) #'standard_scaler_filtered_master.pkl'
     df = scaler.transform(df)
+
+    # mx_scaler = MinMaxScaler(feature_range=(0,1))
+    # mx_scaler.fit(df)
+    # dump(mx_scaler, open('minmax_scaler_filtered_master.pkl', 'wb'))
+    # mx_scaler = load(open('mx_standard_scaler_master.pkl', 'rb')) #'standard_scaler_master.pkl'
+    # df = mx_scaler.transform(df)
+
     return df
 
 def prep_data(df,window,angle_label,interval=0,Normalize=False,rms=False,angle_thresh = 0.001,plot=False):
@@ -427,6 +433,87 @@ def prep_data_DTM(df,window,interval=0,Normalize=False,rms=False,angle_thresh = 
             print(i,'->',counter[i]*100/X.shape[0],'%')
     return X, y
 
+def prep_data_DTM_bin(df,window,interval=0,Normalize=False,rms=False,angle_thresh = 0.008,plot=False):
+
+    emg_labels = ['EMG1', 'EMG2', 'EMG3', 'EMG4', 'EMG5', 'EMG6',
+           'EMG7', 'EMG8'] # , 'EMG9', 'EMG10', 'EMG11', 'EMG12'
+    emg_df = df[emg_labels]
+    
+
+    if(Normalize==True):
+        emg_df = pd.DataFrame(norm(emg_df),columns=emg_labels)
+        
+    if(rms==True):
+        emg_df = rms_df(emg_df,window)
+    
+    emg_array = np.array(emg_df)
+    all_angle_flexion = np.array(df['Flexion_Angle'])
+    all_angle_radial = np.array(df['Radial_Angle'])
+    
+    segments = []
+    X = []
+    y = []
+    i = 0
+    counter = [0,0,0]
+    while i < df.shape[0]-window:
+        rmin = i
+        rmax = i+window
+        
+        loc_arr = emg_array[rmin:rmax]
+        # X.append(loc_arr)
+        angles_flexion = all_angle_flexion[rmin:rmax]
+        angles_radial = all_angle_radial[rmin:rmax]
+        diff_flexion = difference(angles_flexion).mean()
+        diff_radial = difference(angles_radial).mean()
+        
+        if(abs(diff_flexion)<angle_thresh and abs(diff_radial)<angle_thresh):
+            # y.append([1,0,0])
+            segments.append([rmin,rmax,'1'])
+            counter[0]=counter[0]+1
+        elif(diff_flexion>0 and diff_radial>0):
+            y.append([1,0])
+            X.append(loc_arr)
+            segments.append([rmin,rmax,'r'])
+            counter[1]=counter[1]+1
+        else:
+            y.append([0,1])
+            X.append(loc_arr)
+            segments.append([rmin,rmax,'b'])
+            counter[2]=counter[2]+1
+        i = i + interval
+            
+    X = np.array(X)
+    y = np.array(y)
+
+    
+    ## Plot Codes
+    if plot==True:
+        fig_size = (18,8)
+        emg_df = pd.DataFrame(np.array(emg_df),columns=emg_labels)
+        emg_df.plot(figsize=fig_size,title='EMG',legend=True)
+        a = map_it(interval,(0,1000),(0,1))
+        for x in segments:
+            plt.axvspan(x[0],x[1],facecolor= x[2], alpha=a)
+        clear_patch = mpatches.Patch(color='white', label='No Motion')
+        blue_patch = mpatches.Patch(color='blue', label='DTM Backward')
+        red_patch = mpatches.Patch(color='red', label='DTM Forward')
+        plt.legend(handles=[clear_patch,red_patch,blue_patch],loc=2)
+        plt.show()
+        
+        plt.figure(figsize=fig_size)
+        plt.plot(all_angle_flexion)
+        plt.plot(all_angle_radial)
+        plt.title('DTM Angles')
+        plt.legend(['Flexion Angle','Radial Angle'],loc=2)
+        plt.xlabel('t [2000hz]')
+        plt.ylabel('Angle (deg)')
+        for x in segments:
+            plt.axvspan(x[0],x[1],facecolor= x[2], alpha=a)
+        plt.show()
+        for i in range(3):
+            print(i,'->',counter[i]*100/X.shape[0],'%')
+    return X, y
+
 def multiple_prep_data(df_list,window,angle_label,interval,Normalize=False,rms=False,angle_thresh=0.001):
     X_all, y_all = [], []
     for df in tqdm(df_list):
@@ -443,6 +530,18 @@ def multiple_prep_data_DTM(df_list,window,interval,Normalize=False,rms=False,ang
     X_all, y_all = [], []
     for df in tqdm(df_list):
         X, y = prep_data_DTM(df,window,interval,Normalize,rms,angle_thresh)
+        X_all.append(X)
+        y_all.append(y)
+        
+    X_all_stack = list_vstacker(X_all)
+    y_all_stack = list_vstacker(y_all)
+
+    return X_all_stack, y_all_stack
+
+def multiple_prep_data_DTM_bin(df_list,window,interval,Normalize=False,rms=False,angle_thresh=0.008):
+    X_all, y_all = [], []
+    for df in tqdm(df_list):
+        X, y = prep_data_DTM_bin(df,window,interval,Normalize,rms,angle_thresh)
         X_all.append(X)
         y_all.append(y)
         
