@@ -1,5 +1,5 @@
 # wrist_data_collection_AWEAR
-
+![emg_cnn_output](https://user-images.githubusercontent.com/24454678/131933038-0e5d0c20-93b3-4db0-b94f-7c59553ccc8e.PNG)
 This is the cumilative repository for the research project **Deep Learning Aproach to Robotic Porosthetic Wrist Control using EMG Signals** done in the AWEAR lab. This repository would consist of all the Data processing piplines codes, custom data preprocessing library built for this project and all the timeseries CNN training Jupyter notebooks using the Data collected within the Awear lab. 
 
 ## Setting up your Machine
