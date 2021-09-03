@@ -1,6 +1,6 @@
 # wrist_data_collection_AWEAR
 ![emg_cnn_output](https://user-images.githubusercontent.com/24454678/131933038-0e5d0c20-93b3-4db0-b94f-7c59553ccc8e.PNG)
-This is the cumulative repository for the research project Deep Learning Approach to Robotic Prosthetic Wrist Control using EMG Signals done in the AWEAR lab. This repository would consist of all the Data processing pipelines codes, custom data preprocessing library built for this project, and all the time series CNN training Jupyter notebooks using the Data collected within the [AWEAR lab, University at Buffalo](https://www.awearlab.com/).
+This is the cumulative repository for the research project **Deep Learning Approach to Robotic Prosthetic Wrist Control using EMG Signals** done in the AWEAR lab. This repository would consist of all the Data processing pipelines codes, custom data preprocessing library built for this project, and all the time series CNN training Jupyter notebooks using the Data collected within the [AWEAR lab, University at Buffalo](https://www.awearlab.com/).
 
 ## Setting up your Machine
 This repository's CNN training codes were built with Tensorflow-gpu version 2.5 with Python 3.6+ and Jupyter Notebook setup. It is highly recommended to setup your machine with compatible **Nvidia GPU which supports Cuda** to run all the training with GPU processing power. Further use the **requirements.txt** to install the other required python libraries. 
