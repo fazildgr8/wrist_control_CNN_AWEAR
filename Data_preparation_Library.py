@@ -91,11 +91,11 @@ def norm(df):
     if len(df.shape)==1:
         df = np.array(df)
         df  = df.reshape(-1,1)
-    # scaler = StandardScaler(with_mean=True,
-    #                         with_std=True,
-    #                         copy=False).fit(df)
+    scaler = StandardScaler(with_mean=True,
+                            with_std=True,
+                            copy=False).fit(df)
     # dump(scaler, open('standard_scaler_filtered_master.pkl', 'wb'))
-    scaler = load(open('standard_scaler_master.pkl', 'rb')) #'standard_scaler_filtered_master.pkl'
+    # scaler = load(open('standard_scaler_master.pkl', 'rb')) #'standard_scaler_filtered_master.pkl'
     df = scaler.transform(df)
 
     # mx_scaler = MinMaxScaler(feature_range=(0,1))
