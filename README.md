@@ -22,7 +22,7 @@ This repository's CNN training codes were built with Tensorflow-gpu version 2.5 
 
 ## Training Data Generation Pipeline
 <img src="https://user-images.githubusercontent.com/24454678/131931423-eb5c254b-0b7e-4f63-bfed-0182a0a6d467.PNG" alt="DataPipeline1" width="600"/> <br> The above mentioned pipeline is used to generate Training Data(X,y) for the CNN training. All the codes and Jupyter notebook associated with the above mentioned pipeline can be found in the files.
-- [Data_preparation_Library.py] (Data_preparation_Library.py) 
+- [Data_preparation_Library.py](Data_preparation_Library.py) 
 - All the Jupyter notebooks that performs CNN training that could be understood by file names.
 
 ## CNN Models and Training
